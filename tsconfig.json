@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+      "module": "ESNext",
+      "moduleResolution": "node",
+      "target": "ESNext",
+      "esModuleInterop": true,
+      "outDir": "./dist",
+      "declaration": true,      // To generate .d.ts files
+      "sourceMap": true,        // To generate .map files
+      "allowJs": true
+    },
+    "include": ["src/**/*"],
+    "exclude": ["node_modules"]
+  }
+  
