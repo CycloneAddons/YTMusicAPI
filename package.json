@@ -1,23 +1,38 @@
 {
-	"name": "ytmusicapi",
+	"name": "lite-ytmusic-api",
 	"version": "1.0.0",
 	"description": "Private API for YouTube Music",
-	"main": "./dist/index.js",
-	"module": "./dist/index.mjs",
-	"types": "./dist/index.d.ts",
-	"author": "Cyclone Addons",
-	"license": "MIT",
+	"keywords": [
+		"youtube music api",
+		"ytm",
+		"youtube music",
+		"api",
+		"music",
+		"youtube"
+	],
+	"homepage": "https://github.com/CycloneAddons/YTMusicAPI#readme",
+	"bugs": {
+		"url": "https://github.com/CycloneAddons/YTMusicAPI/issues"
+	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/CycloneAddons/YTMusicAPI.git"
+		"url": "git+https://github.com/CycloneAddons/YTMusicAPI.git"
 	},
-	"files": ["dist", "package.json"],
+	"license": "MIT",
+	"author": "Cyclone Addons",
+	"type": "commonjs",
 	"exports": {
 		".": {
 			"require": "./dist/index.js",
 			"import": "./dist/index.mjs"
 		}
 	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"dist",
+		"package.json"
+	],
 	"scripts": {
 		"build": "tsup src/index.ts"
 	},
@@ -32,5 +47,5 @@
 		"typescript": "5.1",
 		"zod-to-json-schema": "^3.23.1"
 	},
-	"keywords": ["youtube music api", "ytm", "youtube music", "api", "music", "youtube"]
+	"module": "./dist/index.mjs"
 }
