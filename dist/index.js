@@ -166,21 +166,46 @@ var YTMusicAPI = class {
       query,
       params: "Eg-KAQwIARAAGAAgACgAMABqChAEEAMQCRAFEAo%3D"
     });
-    const contents = _optionalChain([searchData, 'optionalAccess', _ => _.contents, 'optionalAccess', _2 => _2.tabbedSearchResultsRenderer, 'optionalAccess', _3 => _3.tabs, 'optionalAccess', _4 => _4[0], 'optionalAccess', _5 => _5.tabRenderer, 'optionalAccess', _6 => _6.content, 'optionalAccess', _7 => _7.sectionListRenderer, 'optionalAccess', _8 => _8.contents, 'optionalAccess', _9 => _9[0], 'optionalAccess', _10 => _10.musicShelfRenderer, 'optionalAccess', _11 => _11.contents]);
+    var traverse = (data, ...keys) => {
+      const again = (data2, key, deadEnd = false) => {
+        const res = [];
+        if (data2 instanceof Object && key in data2) {
+          res.push(data2[key]);
+          if (deadEnd) return res.length === 1 ? res[0] : res;
+        }
+        if (data2 instanceof Array) {
+          res.push(...data2.map((v) => again(v, key)).flat());
+        } else if (data2 instanceof Object) {
+          res.push(
+            ...Object.keys(data2).map((k) => again(data2[k], key)).flat()
+          );
+        }
+        return res.length === 1 ? res[0] : res;
+      };
+      let value = data;
+      const lastKey = keys.at(-1);
+      for (const key of keys) {
+        value = again(value, key, lastKey === key);
+      }
+      return value;
+    };
+    var traverseList = (data, ...keys) => {
+      return [traverse(data, ...keys)].flat();
+    };
+    const contents = traverseList(searchData, "musicResponsiveListItemRenderer");
     if (!contents || !Array.isArray(contents)) throw new Error("Invalid response structure");
-    return contents.map((song) => {
-      const renderer = song.musicResponsiveListItemRenderer;
+    return contents.map((renderer) => {
       if (!renderer) throw new Error("Invalid item structure");
-      const menuRenderer = _optionalChain([renderer, 'access', _12 => _12.menu, 'optionalAccess', _13 => _13.menuRenderer, 'optionalAccess', _14 => _14.items, 'optionalAccess', _15 => _15[0], 'optionalAccess', _16 => _16.menuNavigationItemRenderer, 'optionalAccess', _17 => _17.navigationEndpoint, 'optionalAccess', _18 => _18.watchEndpoint]);
+      const menuRenderer = _optionalChain([renderer, 'access', _ => _.menu, 'optionalAccess', _2 => _2.menuRenderer, 'optionalAccess', _3 => _3.items, 'optionalAccess', _4 => _4[0], 'optionalAccess', _5 => _5.menuNavigationItemRenderer, 'optionalAccess', _6 => _6.navigationEndpoint, 'optionalAccess', _7 => _7.watchEndpoint]);
       const flexColumns = renderer.flexColumns;
-      const primaryText = _optionalChain([flexColumns, 'optionalAccess', _19 => _19[0], 'optionalAccess', _20 => _20.musicResponsiveListItemFlexColumnRenderer, 'optionalAccess', _21 => _21.text, 'optionalAccess', _22 => _22.runs, 'optionalAccess', _23 => _23[0], 'optionalAccess', _24 => _24.text]);
-      const secondaryText = _optionalChain([flexColumns, 'optionalAccess', _25 => _25[1], 'optionalAccess', _26 => _26.musicResponsiveListItemFlexColumnRenderer, 'optionalAccess', _27 => _27.text]);
-      const artists = _optionalChain([secondaryText, 'optionalAccess', _28 => _28.accessibility, 'optionalAccess', _29 => _29.accessibilityData, 'optionalAccess', _30 => _30.label, 'access', _31 => _31.split, 'call', _32 => _32(" \u2022 "), 'optionalAccess', _33 => _33[0]]);
-      const duration = _optionalChain([secondaryText, 'optionalAccess', _34 => _34.runs, 'optionalAccess', _35 => _35.at, 'call', _36 => _36(-1), 'optionalAccess', _37 => _37.text]);
-      const thumbnail = _optionalChain([renderer, 'access', _38 => _38.thumbnail, 'optionalAccess', _39 => _39.musicThumbnailRenderer, 'optionalAccess', _40 => _40.thumbnail, 'optionalAccess', _41 => _41.thumbnails, 'optionalAccess', _42 => _42.at, 'call', _43 => _43(-1), 'optionalAccess', _44 => _44.url]);
+      const primaryText = _optionalChain([flexColumns, 'optionalAccess', _8 => _8[0], 'optionalAccess', _9 => _9.musicResponsiveListItemFlexColumnRenderer, 'optionalAccess', _10 => _10.text, 'optionalAccess', _11 => _11.runs, 'optionalAccess', _12 => _12[0], 'optionalAccess', _13 => _13.text]);
+      const secondaryText = _optionalChain([flexColumns, 'optionalAccess', _14 => _14[1], 'optionalAccess', _15 => _15.musicResponsiveListItemFlexColumnRenderer, 'optionalAccess', _16 => _16.text]);
+      const artists = _optionalChain([secondaryText, 'optionalAccess', _17 => _17.accessibility, 'optionalAccess', _18 => _18.accessibilityData, 'optionalAccess', _19 => _19.label, 'access', _20 => _20.split, 'call', _21 => _21(" \u2022 "), 'optionalAccess', _22 => _22[0]]);
+      const duration = _optionalChain([secondaryText, 'optionalAccess', _23 => _23.runs, 'optionalAccess', _24 => _24.at, 'call', _25 => _25(-1), 'optionalAccess', _26 => _26.text]);
+      const thumbnail = _optionalChain([renderer, 'access', _27 => _27.thumbnail, 'optionalAccess', _28 => _28.musicThumbnailRenderer, 'optionalAccess', _29 => _29.thumbnail, 'optionalAccess', _30 => _30.thumbnails, 'optionalAccess', _31 => _31.at, 'call', _32 => _32(-1), 'optionalAccess', _33 => _33.url]);
       return {
         type: "SONG",
-        videoId: _optionalChain([menuRenderer, 'optionalAccess', _45 => _45.videoId]) || "Unknown",
+        videoId: _optionalChain([menuRenderer, 'optionalAccess', _34 => _34.videoId]) || "Unknown",
         title: primaryText || "Unknown",
         artists: artists || "Unknown",
         duration: duration || "Unknown",
@@ -201,18 +226,18 @@ var YTMusicAPI = class {
       playlistId: `RDAMVM${videoId}`,
       isAudioOnly: true
     });
-    const tabs = _optionalChain([data, 'optionalAccess', _46 => _46.contents, 'optionalAccess', _47 => _47.singleColumnMusicWatchNextResultsRenderer, 'optionalAccess', _48 => _48.tabbedRenderer, 'optionalAccess', _49 => _49.watchNextTabbedResultsRenderer, 'optionalAccess', _50 => _50.tabs]);
-    if (!tabs || !_optionalChain([tabs, 'access', _51 => _51[0], 'optionalAccess', _52 => _52.tabRenderer, 'optionalAccess', _53 => _53.content, 'optionalAccess', _54 => _54.musicQueueRenderer, 'optionalAccess', _55 => _55.content, 'optionalAccess', _56 => _56.playlistPanelRenderer, 'optionalAccess', _57 => _57.contents])) {
+    const tabs = _optionalChain([data, 'optionalAccess', _35 => _35.contents, 'optionalAccess', _36 => _36.singleColumnMusicWatchNextResultsRenderer, 'optionalAccess', _37 => _37.tabbedRenderer, 'optionalAccess', _38 => _38.watchNextTabbedResultsRenderer, 'optionalAccess', _39 => _39.tabs]);
+    if (!tabs || !_optionalChain([tabs, 'access', _40 => _40[0], 'optionalAccess', _41 => _41.tabRenderer, 'optionalAccess', _42 => _42.content, 'optionalAccess', _43 => _43.musicQueueRenderer, 'optionalAccess', _44 => _44.content, 'optionalAccess', _45 => _45.playlistPanelRenderer, 'optionalAccess', _46 => _46.contents])) {
       throw new Error("Invalid response structure");
     }
     const contents = tabs[0].tabRenderer.content.musicQueueRenderer.content.playlistPanelRenderer.contents;
     return contents.slice(1).map(({ playlistPanelVideoRenderer: { videoId: videoId2, title, shortBylineText, lengthText, thumbnail } }) => ({
       type: "SONG",
       videoId: videoId2,
-      title: _optionalChain([title, 'optionalAccess', _58 => _58.runs, 'access', _59 => _59[0], 'optionalAccess', _60 => _60.text]) || "Unknown",
-      artists: _optionalChain([shortBylineText, 'optionalAccess', _61 => _61.runs, 'access', _62 => _62[0], 'optionalAccess', _63 => _63.text]) || "Unknown",
-      duration: _optionalChain([lengthText, 'optionalAccess', _64 => _64.runs, 'access', _65 => _65[0], 'optionalAccess', _66 => _66.text]) || "Unknown",
-      thumbnail: _optionalChain([thumbnail, 'optionalAccess', _67 => _67.thumbnails, 'access', _68 => _68.at, 'call', _69 => _69(-1), 'optionalAccess', _70 => _70.url]) || "Unknown"
+      title: _optionalChain([title, 'optionalAccess', _47 => _47.runs, 'access', _48 => _48[0], 'optionalAccess', _49 => _49.text]) || "Unknown",
+      artists: _optionalChain([shortBylineText, 'optionalAccess', _50 => _50.runs, 'access', _51 => _51[0], 'optionalAccess', _52 => _52.text]) || "Unknown",
+      duration: _optionalChain([lengthText, 'optionalAccess', _53 => _53.runs, 'access', _54 => _54[0], 'optionalAccess', _55 => _55.text]) || "Unknown",
+      thumbnail: _optionalChain([thumbnail, 'optionalAccess', _56 => _56.thumbnails, 'access', _57 => _57.at, 'call', _58 => _58(-1), 'optionalAccess', _59 => _59.url]) || "Unknown"
     }));
   }
 };

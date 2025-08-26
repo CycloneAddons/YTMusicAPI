@@ -166,10 +166,35 @@ var YTMusicAPI = class {
       query,
       params: "Eg-KAQwIARAAGAAgACgAMABqChAEEAMQCRAFEAo%3D"
     });
-    const contents = searchData?.contents?.tabbedSearchResultsRenderer?.tabs?.[0]?.tabRenderer?.content?.sectionListRenderer?.contents?.[0]?.musicShelfRenderer?.contents;
+    var traverse = (data, ...keys) => {
+      const again = (data2, key, deadEnd = false) => {
+        const res = [];
+        if (data2 instanceof Object && key in data2) {
+          res.push(data2[key]);
+          if (deadEnd) return res.length === 1 ? res[0] : res;
+        }
+        if (data2 instanceof Array) {
+          res.push(...data2.map((v) => again(v, key)).flat());
+        } else if (data2 instanceof Object) {
+          res.push(
+            ...Object.keys(data2).map((k) => again(data2[k], key)).flat()
+          );
+        }
+        return res.length === 1 ? res[0] : res;
+      };
+      let value = data;
+      const lastKey = keys.at(-1);
+      for (const key of keys) {
+        value = again(value, key, lastKey === key);
+      }
+      return value;
+    };
+    var traverseList = (data, ...keys) => {
+      return [traverse(data, ...keys)].flat();
+    };
+    const contents = traverseList(searchData, "musicResponsiveListItemRenderer");
     if (!contents || !Array.isArray(contents)) throw new Error("Invalid response structure");
-    return contents.map((song) => {
-      const renderer = song.musicResponsiveListItemRenderer;
+    return contents.map((renderer) => {
       if (!renderer) throw new Error("Invalid item structure");
       const menuRenderer = renderer.menu?.menuRenderer?.items?.[0]?.menuNavigationItemRenderer?.navigationEndpoint?.watchEndpoint;
       const flexColumns = renderer.flexColumns;

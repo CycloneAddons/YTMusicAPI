@@ -200,13 +200,38 @@ export default class YTMusicAPI {
             query,
             params: "Eg-KAQwIARAAGAAgACgAMABqChAEEAMQCRAFEAo%3D",
         });
+        var traverse = (data, ...keys) => {
+            const again = (data2, key, deadEnd = false) => {
+                const res = [];
+                if (data2 instanceof Object && key in data2) {
+                    res.push(data2[key]);
+                    if (deadEnd) return res.length === 1 ? res[0] : res;
+                }
+                if (data2 instanceof Array) {
+                    res.push(...data2.map((v) => again(v, key)).flat());
+                } else if (data2 instanceof Object) {
+                    res.push(
+                        ...Object.keys(data2).map((k) => again(data2[k], key)).flat()
+                    );
+                }
+                return res.length === 1 ? res[0] : res;
+            };
+            let value = data;
+            const lastKey = keys.at(-1);
+            for (const key of keys) {
+                value = again(value, key, lastKey === key);
+            }
+            return value;
+        };
+        var traverseList = (data, ...keys) => {
+            return [traverse(data, ...keys)].flat();
+        };
 
-        const contents = searchData?.contents?.tabbedSearchResultsRenderer?.tabs?.[0]?.tabRenderer?.content?.sectionListRenderer?.contents?.[0]?.musicShelfRenderer?.contents;
+        const contents = traverseList(searchData, "musicResponsiveListItemRenderer");
 
         if (!contents || !Array.isArray(contents)) throw new Error("Invalid response structure");
 
-        return contents.map((song) => {
-            const renderer = song.musicResponsiveListItemRenderer;
+        return contents.map((renderer) => {
             if (!renderer) throw new Error("Invalid item structure");
 
             const menuRenderer = renderer.menu?.menuRenderer?.items?.[0]?.menuNavigationItemRenderer?.navigationEndpoint?.watchEndpoint;
@@ -229,34 +254,34 @@ export default class YTMusicAPI {
     }
 
 
- /**
-   * Get all possible information of a Up Nexts Song
-   *
-   * @param videoId Video ID
-   * @returns Up Nexts Data
-   */
- async getUpNexts(videoId: string): Promise<Song[]> {
-    if (!/^[a-zA-Z0-9-_]{11}$/.test(videoId)) throw new Error("Invalid videoId");
-    const data = await this.constructRequest("next", {
-      videoId,
-      playlistId: `RDAMVM${videoId}`,
-      isAudioOnly: true
-    });
+    /**
+      * Get all possible information of a Up Nexts Song
+      *
+      * @param videoId Video ID
+      * @returns Up Nexts Data
+      */
+    async getUpNexts(videoId: string): Promise<Song[]> {
+        if (!/^[a-zA-Z0-9-_]{11}$/.test(videoId)) throw new Error("Invalid videoId");
+        const data = await this.constructRequest("next", {
+            videoId,
+            playlistId: `RDAMVM${videoId}`,
+            isAudioOnly: true
+        });
 
-    const tabs = data?.contents?.singleColumnMusicWatchNextResultsRenderer?.tabbedRenderer?.watchNextTabbedResultsRenderer?.tabs;
-    if (!tabs || !tabs[0]?.tabRenderer?.content?.musicQueueRenderer?.content?.playlistPanelRenderer?.contents) {
-        throw new Error("Invalid response structure");
+        const tabs = data?.contents?.singleColumnMusicWatchNextResultsRenderer?.tabbedRenderer?.watchNextTabbedResultsRenderer?.tabs;
+        if (!tabs || !tabs[0]?.tabRenderer?.content?.musicQueueRenderer?.content?.playlistPanelRenderer?.contents) {
+            throw new Error("Invalid response structure");
+        }
+
+        const contents = tabs[0].tabRenderer.content.musicQueueRenderer.content.playlistPanelRenderer.contents;
+        return contents.slice(1).map(({ playlistPanelVideoRenderer: { videoId: videoId2, title, shortBylineText, lengthText, thumbnail } }) => ({
+            type: "SONG",
+            videoId: videoId2,
+            title: title?.runs[0]?.text || "Unknown",
+            artists: shortBylineText?.runs[0]?.text || "Unknown",
+            duration: lengthText?.runs[0]?.text || "Unknown",
+            thumbnail: thumbnail?.thumbnails.at(-1)?.url || "Unknown"
+        }));
     }
-
-    const contents = tabs[0].tabRenderer.content.musicQueueRenderer.content.playlistPanelRenderer.contents;
-    return contents.slice(1).map(({ playlistPanelVideoRenderer: { videoId: videoId2, title, shortBylineText, lengthText, thumbnail } }) => ({
-        type: "SONG",
-        videoId: videoId2,
-        title: title?.runs[0]?.text || "Unknown",
-        artists: shortBylineText?.runs[0]?.text || "Unknown",
-        duration: lengthText?.runs[0]?.text || "Unknown",
-        thumbnail: thumbnail?.thumbnails.at(-1)?.url || "Unknown"
-    }));
-}
 
 }
